@@ -15,11 +15,13 @@ app.get('/scrape', async (req, res) => {
     try {
         browser = await puppeteer.launch({
             headless: 'new',
+            executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || puppeteer.executablePath(),
             args: [
                 '--no-sandbox',
                 '--disable-setuid-sandbox',
                 '--disable-dev-shm-usage',
                 '--disable-gpu',
+                '--single-process',
             ],
         });
 
@@ -34,13 +36,11 @@ app.get('/scrape', async (req, res) => {
             'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
         });
 
-        // Espera a que la red esté idle (Cloudflare challenge resuelto)
         await page.goto(url, {
             waitUntil: 'networkidle2',
             timeout: 30000,
         });
 
-        // Si Cloudflare muestra challenge, esperar hasta 10s extra
         const title = await page.title();
         if (title.includes('Just a moment')) {
             await new Promise(r => setTimeout(r, 8000));
